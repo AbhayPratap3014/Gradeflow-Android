@@ -22,7 +22,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -56,9 +55,7 @@ jobs:
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then
-              echo "Gradle/Maven failed; clearing transient module cache and retrying..."
-              rm -rf ~/.gradle/caches/modules-2/files-2.1/org.apache.httpcomponents || true
-              rm -rf ~/.gradle/caches/modules-2/files-2.1/org.ow2.asm || true
+              echo "Gradle/Maven failed; retrying..."
               sleep $((attempt * 20))
             fi
           done
