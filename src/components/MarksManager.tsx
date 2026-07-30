@@ -1,0 +1,15 @@
+import {useMemo,useState} from 'react';
+import {Pencil,Trash2} from 'lucide-react';
+import {semesters} from '../data/academics';
+import type {Mark} from '../types/academic';
+
+export function MarksManager({marks,onUpdate,onDelete}:{marks:Mark[];onUpdate:(id:string,p:Partial<Mark>)=>Promise<unknown>;onDelete:(id:string)=>Promise<unknown>}){
+ const [sem,setSem]=useState<number|0>(0),[subject,setSubject]=useState('all'),[editing,setEditing]=useState<Mark|null>(null),[score,setScore]=useState(''),[max,setMax]=useState('');
+ const subjects=useMemo(()=>Array.from(new Set(marks.filter(m=>!sem||m.semester===sem).map(m=>m.subjectCode))),[marks,sem]);
+ const shown=useMemo(()=>marks.filter(m=>(!sem||m.semester===sem)&&(subject==='all'||m.subjectCode===subject)),[marks,sem,subject]);
+ const total=shown.reduce((a,m)=>a+m.score,0),outOf=shown.reduce((a,m)=>a+m.max,0);
+ const name=(m:Mark)=>semesters.find(s=>s.id===m.semester)?.courses.find(c=>c.code===m.subjectCode)?.name??m.subjectCode;
+ const edit=(m:Mark)=>{setEditing(m);setScore(String(m.score));setMax(String(m.max))};
+ const save=async()=>{if(!editing)return;const s=Number(score),mx=Number(max);if(!Number.isFinite(s)||!Number.isFinite(mx)||mx<=0||s<0||s>mx)return;await onUpdate(editing.id,{score:s,max:mx});setEditing(null)};
+ return <><div className="marksFilters"><select value={sem} onChange={e=>{setSem(+e.target.value);setSubject('all')}}><option value={0}>All semesters</option>{semesters.map(s=><option key={s.id} value={s.id}>Semester {s.id}</option>)}</select><select value={subject} onChange={e=>setSubject(e.target.value)}><option value="all">All subjects</option>{subjects.map(s=><option key={s} value={s}>{s}</option>)}</select></div>{shown.length>0&&<div className="quick"><article><small>RECORDED</small><b>{shown.length}</b><span>assessments</span></article><article><small>COMBINED SCORE</small><b>{outOf?Math.round(total/outOf*100):0}%</b><span>{total} / {outOf}</span></article></div>}<div className="list">{shown.map(m=><div className="mark" key={m.id}><div><b>{name(m)}</b><span>{m.assessment} · Sem {m.semester}</span></div><div><strong>{m.score} / {m.max}</strong><span>{Math.round(m.score/m.max*100)}%</span></div><button className="iconAction" aria-label="Edit mark" onClick={()=>edit(m)}><Pencil size={17}/></button><button className="iconAction" aria-label="Delete mark" onClick={()=>void onDelete(m.id)}><Trash2 size={17}/></button></div>)}</div>{!shown.length&&<div className="emptyState"><b>No matching marks</b><p>Change the filters or add an assessment with the + button.</p></div>}{editing&&<div className="sheetBackdrop" onClick={()=>setEditing(null)}><div className="sheet" onClick={e=>e.stopPropagation()}><div className="sheetHandle"/><small>EDIT ASSESSMENT</small><h2>{name(editing)}</h2><label>Score<input type="number" value={score} onChange={e=>setScore(e.target.value)}/></label><label>Out of<input type="number" value={max} onChange={e=>setMax(e.target.value)}/></label><button className="miniAction" onClick={()=>void save()}>Save changes</button><button className="textAction" onClick={()=>setEditing(null)}>Cancel</button></div></div>}</>
+}
