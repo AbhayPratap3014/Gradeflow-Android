@@ -3,6 +3,8 @@ name: Build Gradeflow Android APK
 on:
   push:
     branches: [app-v1]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
