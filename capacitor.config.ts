@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'app.gradeflow.mobile',
   appName: 'Gradeflow',
   webDir: 'dist',
-  bundledWebRuntime: false,
   android: {
     backgroundColor: '#f5f6f2',
     allowMixedContent: false,
