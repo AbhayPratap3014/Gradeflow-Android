@@ -5,6 +5,7 @@ on:
     branches: [app-v1]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
