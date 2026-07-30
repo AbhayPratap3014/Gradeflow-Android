@@ -9,8 +9,8 @@ export function useAcademicState() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    setSyncing(true);
+  const refresh = useCallback(async (quiet = false) => {
+    if (!quiet) setSyncing(true);
     setError(null);
     try {
       const [nextState, nextMarks] = await Promise.all([
@@ -23,17 +23,37 @@ export function useAcademicState() {
       setError(e instanceof Error ? e.message : 'Could not sync Gradeflow data');
     } finally {
       setLoading(false);
-      setSyncing(false);
+      if (!quiet) setSyncing(false);
     }
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  // The website and Android app share the same Supabase records. Pull again when
+  // the app returns to the foreground and periodically while it stays open so a
+  // change made on either surface appears on the other without reinstall/reload.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') void refresh(true); };
+    const onFocus = () => { void refresh(true); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') void refresh(true); }, 30000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+      window.clearInterval(timer);
+    };
+  }, [refresh]);
 
   const persistState = async (next: GradeflowState) => {
     const previous = state;
     setState(next);
     try {
       await academicRepository.saveState(next);
+      // Re-read the canonical cloud row after a write. This catches database
+      // transforms and keeps local cache identical to the website's source.
+      const canonical = await academicRepository.getState();
+      setState(canonical);
     } catch (e) {
       setState(previous);
       setError(e instanceof Error ? e.message : 'Could not save Gradeflow state');
@@ -95,25 +115,9 @@ export function useAcademicState() {
   }, [marks]);
 
   return {
-    marks,
-    state,
-    target: state.target,
-    s3: state.s3,
-    sim1: state.sim1,
-    sim2: state.sim2,
-    month: state.month,
-    setTarget,
-    setS3,
-    setSandbox,
-    setMonth,
-    addMark,
-    updateMark,
-    deleteMark,
-    restoreMark,
-    marksBySubject,
-    loading,
-    syncing,
-    error,
-    refresh,
+    marks, state, target: state.target, s3: state.s3, sim1: state.sim1,
+    sim2: state.sim2, month: state.month, setTarget, setS3, setSandbox,
+    setMonth, addMark, updateMark, deleteMark, restoreMark, marksBySubject,
+    loading, syncing, error, refresh,
   };
 }
