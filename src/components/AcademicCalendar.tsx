@@ -1,0 +1,12 @@
+import {ChevronLeft,ChevronRight} from 'lucide-react';
+
+const events=[
+ ['2026-07-27','Commencement of classes','class'],['2026-08-15','Independence Day','holiday'],['2026-08-26','Milad-un-Nabi','holiday'],['2026-09-04','Janmashtami','holiday'],['2026-09-14','MSE-1 begins','exam'],['2026-09-18','MSE-1 ends','exam'],['2026-10-02','Gandhi Jayanti','holiday'],['2026-10-19','Diwali Break begins','break'],['2026-10-23','Diwali Break ends','break'],['2026-11-09','MSE-2 begins','exam'],['2026-11-13','MSE-2 ends','exam'],['2026-12-04','Last teaching day','milestone'],['2026-12-07','ESE begins','exam'],['2026-12-18','ESE ends','exam']
+] as const;
+const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+export function AcademicCalendar({month,setMonth}:{month:number;setMonth:(n:number)=>Promise<void>}){
+ const year=2026,first=new Date(year,month,1).getDay(),days=new Date(year,month+1,0).getDate();
+ const monthEvents=events.filter(e=>new Date(e[0]+'T00:00:00').getMonth()===month);
+ const change=(delta:number)=>{const n=Math.max(0,Math.min(11,month+delta));if(n!==month)void setMonth(n)};
+ return <><header className="detailHead"><div><small>ACADEMIC CALENDAR</small><h1>{months[month]} {year}</h1></div></header><div className="calendarNav"><button onClick={()=>change(-1)} disabled={month===0}><ChevronLeft/></button><b>{months[month]}</b><button onClick={()=>change(1)} disabled={month===11}><ChevronRight/></button></div><div className="calendarGrid">{['S','M','T','W','T','F','S'].map((x,i)=><small key={i}>{x}</small>)}{Array.from({length:first},(_,i)=><i key={'e'+i}/>)}{Array.from({length:days},(_,i)=>{const day=i+1,ev=monthEvents.filter(e=>new Date(e[0]+'T00:00:00').getDate()===day);return <div className={ev.length?'calendarDay hasEvent':'calendarDay'} key={day}><b>{day}</b>{ev.length>0&&<span/>}</div>})}</div><div className="sectionTitle"><div><small>{months[month].toUpperCase()}</small><h2>Important dates</h2></div></div>{monthEvents.length?<div className="list">{monthEvents.map(e=><div className="mark" key={e[0]}><div><b>{e[1]}</b><span>{new Date(e[0]+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</span></div><div><span>{e[2]}</span></div></div>)}</div>:<div className="emptyState"><b>No academic events</b><p>There are no Gradeflow calendar events saved for this month.</p></div>}</>
+}
